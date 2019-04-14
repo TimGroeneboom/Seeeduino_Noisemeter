@@ -25,13 +25,12 @@ byte packet[17] =
    0x00,
    0x00,
    0x00,
-   // power
+   // voltage float in 4 bytes
+   0x00,
+   0x00,
+   0x00,
    0x00
 };
-
-// gps
-float lon = 0.0f;
-float lat = 0.0f;
 
 // decibel
 float db = 60.0f;
@@ -43,10 +42,14 @@ byte* floatBuff = new byte[4];
 const int pin_battery_status  = A5;
 const int pin_battery_voltage = A4;
 
-//
+// used for waking gps every 10 minutes
 bool wakeGPS = true;
 int gpsCounter = 0;
 const int gpsWakeInterval = 10; // 10 minutes
+
+// gps coordinates
+float lon = 0.0f;
+float lat = 0.0f;
 
 // forward declarations
 void setupGPS();
@@ -85,6 +88,11 @@ void loop(void)
   SerialUSB.println("--------BEGIN_LOOP--------");
   
   bool result = false;
+
+  if( wakeGPS )
+  {
+    setupGPS();
+  }
 
   SerialUSB.print(F("Location : ")); 
   if (gps.location.isValid())
@@ -126,11 +134,6 @@ void loop(void)
     packet[8] = 0;
     SerialUSB.print("Invalid");
     SerialUSB.println();
-  }
-
-  if( wakeGPS )
-  {
-    setupGPS();
   }
 
   int counter = 0;
@@ -188,8 +191,6 @@ void loop(void)
     memset(buffer, 0, 256);
     length = lora.receivePacket(buffer, 256, &rssi);
 
-    lora.setDeviceLowPower();
-    
     if(length)
     {
       SerialUSB.println("Received packet ->");
@@ -205,6 +206,14 @@ void loop(void)
           SerialUSB.print(" ");
       }
       SerialUSB.println();
+
+      if( buffer[0] == 1 )
+      {
+        // wake gps signal received
+        SerialUSB.println("Wake GPS signal received!");
+        wakeGPS = true;
+        gpsCounter = 0;
+      }
     }
   }else
   {
@@ -214,9 +223,11 @@ void loop(void)
     setupLora();
   }
 
+  lora.setDeviceLowPower();
   gpsCounter++;
   if( gpsCounter > gpsWakeInterval )
   {
+    SerialUSB.println("Wake GPS next loop...");
     wakeGPS = true;
     gpsCounter = 0;
   }
@@ -235,11 +246,17 @@ void setupGPS()
     // wake gps
     Serial.write('A');
 
-    while (!gps.location.isValid()) {
-      while (Serial.available() > 0) {
-        if (gps.encode(c=Serial.read())) {
+    long currentTime = millis();
+
+    while (!gps.location.isValid())
+    {
+      while (Serial.available() > 0)
+      {
+        if (gps.encode(c=Serial.read()))
+        {
           //displayInfo();
-          if (gps.location.isValid()) {
+          if (gps.location.isValid())
+          {
             locked = true;
             break;
           }
@@ -250,25 +267,26 @@ void setupGPS()
      if (locked)
         break;
 
-      if (millis() > 15000 && gps.charsProcessed() < 10)
+      if (millis() > currentTime + 15000 && gps.charsProcessed() < 10)
       {
         SerialUSB.println(F("No GPS detected: check wiring."));
         SerialUSB.println(gps.charsProcessed());
       } 
-      else if (millis() > 20000) {
+      else if (millis() > currentTime + 20000)
+      {
         SerialUSB.println(F("Not able to get a fix in alloted time."));     
         break;
       }
     }
 
-    SerialUSB.print("Putting gps to sleep...");
+    SerialUSB.println("Putting gps to sleep...");
     Serial.write("$PMTK161,0*28\r\n");
     wakeGPS = false;
 }
 
 void setupLora()
 {
-      // lora
+    // lora
     
     lora.init();
     
