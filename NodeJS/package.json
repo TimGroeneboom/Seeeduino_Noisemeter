@@ -11,7 +11,12 @@
   "dependencies": {
     "async": "^2.6.2",
     "curl-request": "^1.1.1",
+    "express": "^4.16.4",
     "fs": "0.0.1-security",
-    "google-spreadsheet": "^2.0.7"
+    "google-spreadsheet": "^2.0.7",
+    "hbs": "^4.0.4",
+    "path": "^0.12.7",
+    "socket.io": "^2.2.0",
+    "ttn": "^2.3.2"
   }
 }
