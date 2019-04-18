@@ -89,6 +89,7 @@ exports.go = function (){
     functions.addDecibel = function (devId, payload) {
         console.log('[%s] Received uplink', appId, devId, payload.payload_fields);
 
+        appId = 'noiselogger';
         let key = appId + ':' + devId;
         let d = devices[key] = devices[key] || {};
         d.eui = payload.hardware_serial;
