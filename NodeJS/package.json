@@ -1,0 +1,17 @@
+{
+  "name": "meter_reader",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "async": "^2.6.2",
+    "curl-request": "^1.1.1",
+    "fs": "0.0.1-security",
+    "google-spreadsheet": "^2.0.7"
+  }
+}
