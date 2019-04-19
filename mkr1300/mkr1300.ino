@@ -63,13 +63,16 @@ void setup() {
 
   setupLora();
 
-    // stop blink!
+  // stop blink!
   digitalWrite(LED_BUILTIN, LOW);
+
+  // flash to indicate we started!
+  flash();
 }
 
 void setupLora()
 {
-    // change this to your regional band (eg. US915, AS923, ...)
+  // change this to your regional band (eg. US915, AS923, ...)
   if (!modem.begin(EU868)) {
     Serial.println("Failed to start module");
     while (1) {}
@@ -89,13 +92,22 @@ void setupLora()
 
   // Set poll interval to 60 secs.
   modem.minPollInterval(60);
+
+
+}
+
+void flash() {
+  for (int i = 0; i < 10; i++) {
+    digitalWrite(LED_BUILTIN, i % 2 == 1 ? LOW : HIGH);
+    delay(100);
+  }
 }
 
 void loop() {
 
   // stop blink!
   digitalWrite(LED_BUILTIN, LOW);
-  
+
   // construct gps part of the packet
   packet[0] = 0; // gps valid
 
@@ -154,11 +166,11 @@ void loop() {
 
   // blink!
   digitalWrite(LED_BUILTIN, HIGH);
-  
+
   // send the packet
   int err;
   modem.beginPacket();
-  for(int i = 0 ; i < 17; i++)
+  for (int i = 0 ; i < 17; i++)
   {
     modem.print((char)packet[i]);
   }
@@ -172,7 +184,7 @@ void loop() {
     setupLora();
     return;
   }
-  
+
   delay(250);
 
 
