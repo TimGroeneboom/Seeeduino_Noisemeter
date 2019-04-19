@@ -1,8 +1,11 @@
+//#define USE_GPS
+
 #include <LoRaWan.h>
 
+#ifdef USE_GPS
 #include "TinyGPS++.h"
-
 TinyGPSPlus gps;
+#endif
 
 char buffer[256];
 
@@ -42,6 +45,7 @@ byte* floatBuff = new byte[4];
 const int pin_battery_status  = A5;
 const int pin_battery_voltage = A4;
 
+#ifdef USE_GPS
 // used for waking gps every 10 minutes
 bool wakeGPS = true;
 int gpsCounter = 0;
@@ -49,11 +53,19 @@ const int gpsWakeInterval = 10; // 10 minutes
 bool gpsIsSleeping = false;
 
 // gps coordinates
-float lon = 0.0f;
-float lat = 0.0f;
+float lon = 0;
+float lat = 0;
+#endif
+
+// fallback gps coordinates
+const float fixedLon = 4.9054446;
+const float fixedLat = 52.396237;
 
 // forward declarations
+#ifdef USE_GPS
 void setupGPS();
+#endif
+
 void setupLora();
 void float2Bytes(float val, byte* bytes_array);
 
@@ -68,7 +80,9 @@ void setup(void)
   // battery
   pinMode(pin_battery_status, INPUT);
 
+#ifdef USE_GPS
   setupGPS();
+#endif
 
   setupLora();
 
@@ -81,6 +95,7 @@ void loop(void)
 
   bool result = false;
 
+#ifdef USE_GPS
   if ( wakeGPS )
   {
     setupGPS();
@@ -123,18 +138,39 @@ void loop(void)
   } else
   {
     // construct gps part of the packet
-    packet[0] = 0; // gps invalid
-    packet[1] = 0;
-    packet[2] = 0;
-    packet[3] = 0;
-    packet[4] = 0;
-    packet[5] = 0;
-    packet[6] = 0;
-    packet[7] = 0;
-    packet[8] = 0;
-    SerialUSB.print("Invalid");
+    packet[0] = 0; // gps valid
+
+    float2Bytes(fixedLat, floatBuff);
+    packet[1] = floatBuff[0];
+    packet[2] = floatBuff[1];
+    packet[3] = floatBuff[2];
+    packet[4] = floatBuff[3];
+
+    float2Bytes(fixedLon, floatBuff);
+    packet[5] = floatBuff[0];
+    packet[6] = floatBuff[1];
+    packet[7] = floatBuff[2];
+    packet[8] = floatBuff[3];
+    
+    SerialUSB.print("No gps...");
     SerialUSB.println();
   }
+#else
+  // construct gps part of the packet
+    packet[0] = 0; // gps valid
+
+    float2Bytes(fixedLat, floatBuff);
+    packet[1] = floatBuff[0];
+    packet[2] = floatBuff[1];
+    packet[3] = floatBuff[2];
+    packet[4] = floatBuff[3];
+
+    float2Bytes(fixedLon, floatBuff);
+    packet[5] = floatBuff[0];
+    packet[6] = floatBuff[1];
+    packet[7] = floatBuff[2];
+    packet[8] = floatBuff[3];
+#endif
 
   int counter = 0;
   long prevTime = millis();
@@ -207,6 +243,7 @@ void loop(void)
       }
       SerialUSB.println();
 
+#ifdef USE_GPS
       if ( buffer[0] == 1 )
       {
         // wake gps signal received
@@ -214,6 +251,7 @@ void loop(void)
         wakeGPS = true;
         gpsCounter = 0;
       }
+#endif
     }
   } else
   {
@@ -225,6 +263,7 @@ void loop(void)
 
   lora.setDeviceLowPower();
 
+#ifdef USE_GPS
   if ( gpsIsSleeping )
   {
 
@@ -236,12 +275,13 @@ void loop(void)
       wakeGPS = true;
       gpsCounter = 0;
     }
-
-    SerialUSB.println("--------END_LOOP--------");
   }
+#endif
 
+SerialUSB.println("--------END_LOOP--------");
 }
 
+#ifdef USE_GPS
 void setupGPS()
 {
   bool locked;
@@ -252,6 +292,9 @@ void setupGPS()
 
   // wake gps
   Serial.write('A');
+
+  // give the gps some time to wake up
+  delay(5000);
 
   long currentTime = millis();
 
@@ -288,6 +331,7 @@ void setupGPS()
 
   wakeGPS = false;
 }
+#endif
 
 void setupLora()
 {
