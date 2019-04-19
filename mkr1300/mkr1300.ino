@@ -62,6 +62,9 @@ void setup() {
   while (!Serial && millis() < 10000);
 
   setupLora();
+
+    // stop blink!
+  digitalWrite(LED_BUILTIN, LOW);
 }
 
 void setupLora()
@@ -80,7 +83,7 @@ void setupLora()
   if (!connected) {
     Serial.println("Something went wrong; are you indoor? Move near a window and retry");
     while (!connected) {
-      modem.joinOTAA(appEui, appKey);
+      connected = modem.joinOTAA(appEui, appKey);
     }
   }
 
@@ -90,6 +93,9 @@ void setupLora()
 
 void loop() {
 
+  // stop blink!
+  digitalWrite(LED_BUILTIN, LOW);
+  
   // construct gps part of the packet
   packet[0] = 0; // gps valid
 
@@ -146,6 +152,9 @@ void loop() {
   packet[15] = floatBuff[2];
   packet[16] = floatBuff[3];
 
+  // blink!
+  digitalWrite(LED_BUILTIN, HIGH);
+  
   // send the packet
   int err;
   modem.beginPacket();
@@ -163,7 +172,9 @@ void loop() {
     setupLora();
     return;
   }
-  delay(1000);
+  
+  delay(250);
+
 
   // receive message
   if (!modem.available()) {
