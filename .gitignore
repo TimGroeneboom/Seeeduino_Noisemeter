@@ -2,3 +2,6 @@ NodeJS/google-generated-creds.json
 NodeJS/node_modules/
 NodeJS/package-lock.json
 mkr1300/arduino_secrets.h
+nodejs_server/google-generated-creds.json
+nodejs_server/package-lock.json
+nodejs_server/node_modules/
