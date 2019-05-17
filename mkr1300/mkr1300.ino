@@ -16,6 +16,9 @@ LoRaModem modem;
 String appEui = SECRET_APP_EUI;
 String appKey = SECRET_APP_KEY;
 
+#define SoundSensorPin A1  //this pin read the analog voltage from the sound level meter
+#define VREF  3.3  //voltage on AREF pin,default:operating voltage
+
 byte packet[17] =
 {
   // GPS VALID = 0 GPS invalid = 1
@@ -136,29 +139,41 @@ void loop() {
     time += deltaTime;
     counter++;
 
-    db = (analogRead(0) + 83.2073) / 11.003;
-    dbAvg += db;
+    float voltageValue, dbValue;
+    voltageValue = analogRead(SoundSensorPin) / 1024.0 * VREF;
+    //Serial.println(voltageValue);
+    dbValue = voltageValue * 50.0;  //convert voltage to decibel value
 
-    SerialUSB.print("Decibel : ");
-    SerialUSB.print(db);
+    double antiLog = pow(10.0, dbValue / 10.0);
+
+    dbAvg += antiLog;
+
+    if ( dbValue > dbPeak )
+    {
+      dbPeak = dbValue;
+    }
+
+    SerialUSB.print("DBa : ");
+    SerialUSB.print(dbValue);
     SerialUSB.println();
 
     delay(125);
   }
 
-  dbAvg /= counter;
-
-  // put db into the packet
+  dbAvg = 10.0 * log10(dbAvg / counter);
+  SerialUSB.print("Average DBa : ");
+    SerialUSB.print(dbAvg);
+    SerialUSB.println();
+    
+  // put average DBa into the packet
   float2Bytes((float)dbAvg, floatBuff);
   packet[9] = floatBuff[0];
   packet[10] = floatBuff[1];
   packet[11] = floatBuff[2];
   packet[12] = floatBuff[3];
 
-  // no voltage at this time...
-
-  float v = analogRead(ADC_BATTERY);
-  float2Bytes(v, floatBuff);
+  // put peak DBa into the packet
+  float2Bytes(dbPeak, floatBuff);
   packet[13] = floatBuff[0];
   packet[14] = floatBuff[1];
   packet[15] = floatBuff[2];
