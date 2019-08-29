@@ -107,7 +107,7 @@ exports.app = function (){
         });
     });
     
-    var port = 8081;
+    var port = process.env.PORT_WEBSERVER || 8081;
     server.listen(port, function () {
         console.log('Web server listening on port %s!', port);
     });

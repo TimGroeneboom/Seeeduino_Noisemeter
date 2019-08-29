@@ -30,7 +30,7 @@ var app = function(){
         } 
       })
       
-      const port = 8080
+      const port = process.env.PORT_THINGSNETWORK || 8081
       server.listen(port)
       console.log(`Listening at http://${port}`);
 }
